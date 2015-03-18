@@ -322,12 +322,12 @@ plt.show()
 # Histogram for cd version and vynil version
 figure(8)
 plt.subplot(2,1,1)
-plt.hist(audio1), title('cd version')
+plt.hist(audio1,50), xlim([-1,1]),title('cd version')
 plt.subplot(2,1,2)
-plt.hist(audio2), title('vinyl version')
+plt.hist(audio2,50), xlim([-1,1]),title('vinyl version')
 
-# Computing the kurtosis or skewness. CD version seem to present a normal 
-# distribution whereas vinyl version is skewed.
+# Computing the kurtosis or skewness. CD version looks a normal 
+# distribution whereas vinyl version is a skewed normal distribution with a short deviation or IQR.
 stats = ['mean','var','min','max','median','dmean','dvar' ]
 
 megalopool = PoolAggregator(defaultStats=stats)(pool)
