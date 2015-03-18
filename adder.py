@@ -19,6 +19,17 @@ from numpy import *
 import essentia.standard
 import essentia.streaming
 
+def play(audiofile):
+    import os, sys
+    # NB: this only works with linux!! mplayer crashes!
+    if sys.platform == 'linux2':
+        os.system('mplayer %s' % audiofile)
+    if sys.platform == 'darwin':
+        import subprocess
+        subprocess.call(["afplay", audiofile])
+    else:
+        print 'Not playing audio...'        
+
 # So, first things first, let's load an audio
 # to make sure it's not a trick, let's show the original "audio" to you:
 #filename = 'dubstep.wav'
