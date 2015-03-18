@@ -30,13 +30,15 @@ def play(audiofile):
     else:
         print 'Not playing audio...'        
 
-# So, first things first, let's load an audio
+# So, first let's load audio files
 # to make sure it's not a trick, let's show the original "audio" to you:
 #filename = 'dubstep.wav'
 #play(filename)
 filename1 = '../Courses/UPF/SMC/Term 2nd/Audio and Music Analysis/Labs/Audio quality/dataset/a_d_dataset_30seg/Bonnie M/cd/1- boney-m-daddy-cool-150306_0324.wav' 
 filename2 = '../Courses/UPF/SMC/Term 2nd/Audio and Music Analysis/Labs/Audio quality/dataset/a_d_dataset_30seg/Bonnie M/vinyl/1- Daddy Cool-150306_0324.wav' 
 
+play(filename1)
+play(filename2)
 namespace1 = 'lowlevelcd'
 namespace2 = 'lowlevelvy'
 
