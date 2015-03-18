@@ -30,15 +30,13 @@ def play(audiofile):
     else:
         print 'Not playing audio...'        
 
-# So, first let's load audio files
-# to make sure it's not a trick, let's show the original "audio" to you:
-#filename = 'dubstep.wav'
-#play(filename)
-filename1 = '../Courses/UPF/SMC/Term 2nd/Audio and Music Analysis/Labs/Audio quality/dataset/a_d_dataset_30seg/Bonnie M/cd/1- boney-m-daddy-cool-150306_0324.wav' 
-filename2 = '../Courses/UPF/SMC/Term 2nd/Audio and Music Analysis/Labs/Audio quality/dataset/a_d_dataset_30seg/Bonnie M/vinyl/1- Daddy Cool-150306_0324.wav' 
-
+filename1 = '../../Courses/UPF/SMC/Term 2nd/Audio and Music Analysis/Labs/Audio quality/dataset/a_d_dataset/Bonnie M/cd/1- boney-m-daddy-cool-150306_0324.wav' 
+filename2 = '../../Courses/UPF/SMC/Term 2nd/Audio and Music Analysis/Labs/Audio quality/dataset/a_d_dataset/Bonnie M/vinyl/1- Daddy Cool-150306_0324.wav' 
+"""
+print('Playing audio excerpts...')
 play(filename1)
 play(filename2)
+"""
 namespace1 = 'lowlevelcd'
 namespace2 = 'lowlevelvy'
 
@@ -46,30 +44,32 @@ namespace2 = 'lowlevelvy'
 hopSize = 128
 frameSize = 2048
 sampleRate = 44100
-windowType = 'Hanning'
+
+# So, first let's load audio files
+# to make sure it's not a trick, let's show the original "audio" to you:
 
 # start by instantiating the audio loader:
 loader1 = essentia.standard.MonoLoader(filename = filename1)
 loader2 = essentia.standard.MonoLoader(filename = filename2)
-# and then we actually perform the loading:
+# Perform the loading:
 audio1 = loader1()
 audio2 = loader2()
-# Normalize audio files
+# Normalize audio data, because vinyl versions were recorded from a mixer
 audio1 = audio1/max(audio1)
 audio2 = audio2/max(audio2)
 
+# Import essentia standard algorithms
 from essentia.standard import *
+# Initialize Essentia Objects
 w = Windowing(type = 'hann')
-spectrum = Spectrum()  # FFT() would give the complex FFT, here we just want the magnitude spectrum
-
-
+spectrum = Spectrum()
 mfcc = MFCC()
 pool = essentia.Pool()
 logattacktime = LogAttackTime()
 centroid = Centroid()
 hfc = HFC()
 energy = Energy()
-lowp = LowPass(cutoffFrequency = 100) # 100 hz
+lowp = LowPass(cutoffFrequency = 80) # 100 hz
 crest = Crest()
 envelope = Envelope(attackTime=0.003/5,releaseTime=200./5)
 flatnessDB = FlatnessDB()
@@ -82,13 +82,13 @@ strongdecay = StrongDecay()
 flatnesssfx = FlatnessSFX()
 derivative = Derivative()
 entropy = Entropy()
+dcremoval = DCRemoval(cutoffFrequency=20)
 energybandratiohf = EnergyBandRatio(sampleRate = 44100, startFrequency= 10000, stopFrequency = 22050)
 energybandratiolf = EnergyBandRatio(sampleRate = 44100, startFrequency= 0, stopFrequency = 80)
 
-pool.add(namespace1 + '.' + 'logattacktime', logattacktime(audio1))
-
 # Bag Of Features for cd version
 for frame in FrameGenerator(audio1, frameSize = 2048, hopSize = 128):
+    frame = dcremoval(frame)
     pool.add('lowlevelcd.logattacktime', logattacktime(frame))
     pool.add('lowlevelcd.spec.logattacktime', logattacktime(spectrum(w(frame))))
     pool.add('lowlevelcd.centroid', (sampleRate/2.)*(centroid(spectrum(derivative(w(frame))))))
@@ -107,6 +107,7 @@ for frame in FrameGenerator(audio1, frameSize = 2048, hopSize = 128):
 
 # Bag Of Features for vinyl version
 for frame in FrameGenerator(audio2, frameSize = 2048, hopSize = 128):
+    frame = dcremoval(frame)
     pool.add('lowlevelvy.logattacktime', logattacktime(frame))
     pool.add('lowlevelvy.spec.logattacktime', logattacktime(spectrum(w(frame))))
     pool.add('lowlevelvy.centroid', (sampleRate/2.)*(centroid(spectrum(derivative(w(frame))))))
@@ -152,11 +153,11 @@ plt.autoscale(tight=True)
 plt.subplot(4,1,4)
 plot(t2,pool['lowlevelvy.hfc'].T[1:])
 axis('tight'), xlabel('Time(s)')
-title('High Frequency Energy (vynil version)')
+title('High Frequency Content (vinyl version)')
 plt.autoscale(tight=True)
 plt.show()
 
-# lF energy and HFenergy
+# LF energy and HFenergy
 plt.figure(2, figsize=(11.5, 9))
 plt.subplot(4,1,1)
 plot(t1,pool['lowlevelcd.lfenergy'].T[1:])
@@ -167,7 +168,7 @@ plt.autoscale(tight=True)
 plt.subplot(4,1,2)
 plot(t2,pool['lowlevelvy.lfenergy'].T[1:])
 axis('tight'), xlabel('Time(s)')
-title('LFEnergy (vynil version)')
+title('LFEnergy (vinyl version)')
 plt.autoscale(tight=True)
 
 plt.subplot(4,1,3)
@@ -179,7 +180,7 @@ plt.autoscale(tight=True)
 plt.subplot(4,1,4)
 plot(t2,pool['lowlevelvy.hfenergy'].T[1:])
 axis('tight'), xlabel('Time(s)')
-title('HFEnergy (vynil version)')
+title('HFEnergy (vinyl version)')
 plt.autoscale(tight=True)
 plt.show()
 
@@ -194,7 +195,7 @@ plt.autoscale(tight=True)
 plt.subplot(4,1,2)
 plot(pool['lowlevelvy.logattacktime'].T[1:])
 axis('tight'), xlabel('Time(s)')
-title('LogAttackTime (vynil version)')
+title('LogAttackTime (vinyl version)')
 plt.autoscale(tight=True)
 
 plt.subplot(4,1,3)
@@ -206,34 +207,7 @@ plt.autoscale(tight=True)
 plt.subplot(4,1,4)
 plot(t2,pool['lowlevelvy.crestfactor'].T[1:])
 axis('tight'), xlabel('Time(s)')
-title('Crest Factor (vynil version)')
-plt.autoscale(tight=True)
-plt.show()
-
-# log attack time - Crest Factor (Time domain)
-plt.figure(3, figsize=(11.5, 9))
-plt.subplot(4,1,1)
-plot(pool['lowlevelcd.logattacktime'].T[1:])
-axis('tight'), xlabel('Time(s)')
-title('LogattackTime (cd version)')
-plt.autoscale(tight=True)
-
-plt.subplot(4,1,2)
-plot(pool['lowlevelvy.logattacktime'].T[1:])
-axis('tight'), xlabel('Time(s)')
-title('LogAttackTime (vynil version)')
-plt.autoscale(tight=True)
-
-plt.subplot(4,1,3)
-plot(t1,pool['lowlevelcd.crestfactor'].T[1:])
-axis('tight'), xlabel('Time(s)')
-title('Crst Factor (cd version)')
-plt.autoscale(tight=True)
-
-plt.subplot(4,1,4)
-plot(t2,pool['lowlevelvy.crestfactor'].T[1:])
-axis('tight'), xlabel('Time(s)')
-title('Crest Factor (vynil version)')
+title('Crest Factor (vinyl version)')
 plt.autoscale(tight=True)
 plt.show()
 
@@ -248,7 +222,7 @@ plt.autoscale(tight=True)
 plt.subplot(4,1,2)
 plot(t2,pool['lowlevelvy.centroid'].T[1:])
 axis('tight'), xlabel('Time(s)')
-title('Spectral dCentroid (vynil version)')
+title('Spectral dCentroid (vinyl version)')
 plt.autoscale(tight=True)
 
 plt.subplot(4,1,3)
@@ -260,11 +234,11 @@ plt.autoscale(tight=True)
 plt.subplot(4,1,4)
 plot(t2,pool['lowlevelvy.derivative'].T[1:])
 axis('tight'), xlabel('Time(s)')
-title('Derivative (vynil version)')
+title('Derivative (vinyl version)')
 plt.autoscale(tight=True)
 plt.show()
 
-# Spectral centroid of derivative - Derivative (Time domain)
+# Low Frequency band ratio - High Frequency band ratio
 plt.figure(5, figsize=(11.5, 9))
 plt.subplot(4,1,1)
 plot(t1,pool['lowlevelcd.lfbandratio'].T[1:])
@@ -275,7 +249,7 @@ plt.autoscale(tight=True)
 plt.subplot(4,1,2)
 plot(t2,pool['lowlevelvy.lfbandratio'].T[1:])
 axis('tight'), xlabel('Time(s)')
-title('LF Band Ratio (vynil version)')
+title('LF Band Ratio (vinyl version)')
 plt.autoscale(tight=True)
 
 plt.subplot(4,1,3)
@@ -287,11 +261,11 @@ plt.autoscale(tight=True)
 plt.subplot(4,1,4)
 plot(t2,pool['lowlevelvy.hfbandratio'].T[1:])
 axis('tight'), xlabel('Time(s)')
-title('HF Band Ratio (vynil version)')
+title('HF Band Ratio (vinyl version)')
 plt.autoscale(tight=True)
 plt.show()
 
-# rolloff (Time Domain) - Flatness SFX
+# Rolloff (Time Domain) - Flatness SFX
 plt.figure(6, figsize=(11.5, 9))
 plt.subplot(4,1,1)
 plot(t1,pool['lowlevelcd.rolloff'].T[1:])
@@ -302,7 +276,7 @@ plt.autoscale(tight=True)
 plt.subplot(4,1,2)
 plot(t2,pool['lowlevelvy.rolloff'].T[1:])
 axis('tight'), xlabel('Time(s)')
-title('Roll Off (vynil version)')
+title('Roll Off (vinyl version)')
 plt.autoscale(tight=True)
 
 plt.subplot(4,1,3)
@@ -314,11 +288,11 @@ plt.autoscale(tight=True)
 plt.subplot(4,1,4)
 plot(t2,pool['lowlevelvy.flatnesssfx'].T[1:])
 axis('tight'), xlabel('Time(s)')
-title('Flatness SFX (vynil version)')
+title('Flatness SFX (vinyl version)')
 plt.autoscale(tight=True)
 plt.show()
 
-# rolloff (Time Domain) - Flatness SFX
+# Strong Decay (Frequency Domain) -Entropy
 plt.figure(7, figsize=(11.5, 9))
 plt.subplot(4,1,1)
 plot(t1,pool['lowlevelcd.strongdecay'].T[1:])
@@ -329,7 +303,7 @@ plt.autoscale(tight=True)
 plt.subplot(4,1,2)
 plot(t2,pool['lowlevelvy.strongdecay'].T[1:])
 axis('tight'), xlabel('Time(s)')
-title('Strong Decay (vynil version)')
+title('Strong Decay (vinyl version)')
 plt.autoscale(tight=True)
 
 plt.subplot(4,1,3)
@@ -341,6 +315,21 @@ plt.autoscale(tight=True)
 plt.subplot(4,1,4)
 plot(t2,pool['lowlevelvy.entropy'].T[1:])
 axis('tight'), xlabel('Time(s)')
-title('Entropy (vynil version)')
+title('Entropy (vinyl version)')
 plt.autoscale(tight=True)
 plt.show()
+
+# Histogram for cd version and vynil version
+figure(8)
+plt.subplot(2,1,1)
+plt.hist(audio1), title('cd version')
+plt.subplot(2,1,2)
+plt.hist(audio2), title('vinyl version')
+
+# Computing the kurtosis or skewness. CD version seem to present a normal 
+# distribution whereas vinyl version is skewed.
+stats = ['mean','var','min','max','median','dmean','dvar' ]
+
+megalopool = PoolAggregator(defaultStats=stats)(pool)
+# save to output file
+YamlOutput(filename='outputFeatures.yaml')(megalopool)
