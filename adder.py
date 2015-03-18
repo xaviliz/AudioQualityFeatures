@@ -1,4 +1,6 @@
-reated on Wed Mar 18 17:40:50 2015
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Mar 18 17:40:50 2015
 
 @author: xavilizarraga
 """
