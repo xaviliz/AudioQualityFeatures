@@ -91,17 +91,17 @@ energybandratiolf = EnergyBandRatio(sampleRate = 44100, startFrequency= 0, stopF
 for frame in FrameGenerator(audio1, frameSize = 2048, hopSize = 128):
     frame = dcremoval(frame)
     pool.add('lowlevelcd.logattacktime', logattacktime(frame))
-    pool.add('lowlevelcd.spec_logattacktime', logattacktime(spectrum(w(frame))))
-    pool.add('lowlevelcd.centroid', (sampleRate/2.)*(centroid(spectrum(derivative(w(frame))))))
-    pool.add('lowlevelcd.hfc', hfc(spectrum(w(frame))))
     pool.add('lowlevelcd.lfenergy', energy(lowp(w(frame))))
     pool.add('lowlevelcd.hfenergy', energy(highp(w(frame))))
-    pool.add('lowlevelcd.crestfactor',crest(abs(w(frame)))) 
-    pool.add('lowlevelcd.spectralcrest', crest(spectrum(w(frame))))
+    pool.add('lowlevelcd.crestfactor',crest(abs(w(frame))))
     pool.add('lowlevelcd.rolloff', rolloff((w(frame))))
+    pool.add('lowlevelcd.derivative', std(abs((derivative(w(frame))))-median(abs(derivative(w(frame))))))
+    pool.add('lowlevelcd.spec_logattacktime', logattacktime(spectrum(w(frame))))
+    pool.add('lowlevelcd.centroid', (sampleRate/2.)*(centroid(spectrum(derivative(w(frame))))))
+    pool.add('lowlevelcd.hfc', hfc(spectrum(w(frame)))) 
+    pool.add('lowlevelcd.spectralcrest', crest(spectrum(w(frame))))
     pool.add('lowlevelcd.strongdecay', strongdecay(spectrum(w(frame))))
     pool.add('lowlevelcd.flatnesssfx', flatnesssfx(spectrum(w(frame))))
-    pool.add('lowlevelcd.derivative', std(abs((derivative(w(frame))))-median(abs(derivative(w(frame))))))
     pool.add('lowlevelcd.hfbandratio', energybandratiohf(spectrum(w(frame))))    
     pool.add('lowlevelcd.lfbandratio', energybandratiolf(spectrum(w(frame))))
     pool.add('lowlevelcd.entropy', entropy(spectrum(w(frame))))
@@ -330,8 +330,17 @@ if (pcond != 0):
 
 # Computing the kurtosis or skewness. CD version looks a normal 
 # distribution whereas vinyl version is a skewed normal distribution with a short deviation or IQR.
-stats = ['mean','var','min','max','median','dmean','dmean2','dvar','dvar','dvar2' ]
+stats = ['mean','median','var','min','max','dmean','dmean2','dvar','dvar2' ]
 
 megalopool = PoolAggregator(defaultStats=stats)(pool)
 # save to output file
 YamlOutput(filename='outputFeatures.yaml')(megalopool)
+pathGiven = '../../Courses/UPF/SMC/Term 2nd/Audio and Music Analysis/Labs/Audio quality/dataset/a_d_dataset/'
+clusters = ['cd','vinyl']
+parts = pathGiven.rstrip("/").split("/")
+parentDir = "/".join(parts[:-1])
+arffFilename = "/".join([parentDir, parts[-1]+".arff"])
+wekafile=file(arffFilename, "w+")
+
+relation_name = "quality"
+wekafile.write("@RELATION quality\n\n")
