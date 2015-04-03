@@ -1,1 +1,2 @@
-This script i useful to extract some audio features to evaluate audio quality.	
+This script is useful to extract some audio features to evaluate audio quality.
+IT is an example how Essentia library could be used to personalized feature extraction.
